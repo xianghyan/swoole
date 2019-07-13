@@ -1,0 +1,3 @@
+nohup /usr/bin/php /var/www/swoole/tp5-live/script/monitor/server.php > /var/www/swoole/tp5-live/script/monitor/ws.log &
+
+ps -ef | grep monitor/server.php | grep -v grep

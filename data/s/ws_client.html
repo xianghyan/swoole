@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ws</title>
+</head>
+<body>
+<h1>yxh-swoole-ws测试</h1>
+<script>
+    var wsUrl = "ws://www.just-for-love.top:8812";
+
+    var websocket = new WebSocket(wsUrl);
+
+    //示例对象的onopen属性
+    websocket.onopen = function (event) {
+        websocket.send("helle websocket");
+        console.log("conected-swoole-success.");
+    }
+
+    //实例化对象 ommessage
+    websocket.onmessage = function (event) {
+        console.log("yxh-swoole-server-return:"+event.data);
+    }
+
+    //onclose
+    websocket.onclose = function (event) {
+        console.log("close.");
+    }
+    //onerror
+    websocket.onerror = function (event) {
+        console.log("error" + event.data);
+    }
+</script>
+</body>
+</html>

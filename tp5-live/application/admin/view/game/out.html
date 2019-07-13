@@ -1,0 +1,188 @@
+{include file="public:header" /}
+{block name="centent"}
+<div class="layui-fluid">
+    <div class="layui-row">
+        <form class="layui-form">
+            <div class="layui-form-item">
+                <label for="L_type" class="layui-form-label">
+                    <span class="x-red">*</span>第几节</label>
+                <div class="layui-input-inline">
+                    <select name="type" id="L_type">
+                        <option value="1">第一节</option>
+                        <option value="2">第二节</option>
+                        <option value="3">第三节</option>
+                        <option value="4">第四节</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="test-limit3" class="layui-form-label">
+                    <span class="x-red">*</span>剩余时间</label>
+                <div class="layui-input-inline">
+                    <input type="text" class="layui-input" name="countdown" id="test-limit3" lay-verify="countdown" autocomplete="off" placeholder="HH:mm:ss">
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">比分</label>
+                    <div class="layui-input-inline" style="width: 100px;">
+                        <input type="text" name="b_score" placeholder="客队" value="{$game_info.b_score}" lay-verify="score" autocomplete="off" class="layui-input">
+                    </div>
+                    <div class="layui-form-mid layui-ce">{$game_info.b_name} vs {$game_info.a_name}</div>
+                    <div class="layui-input-inline" style="width: 100px;">
+                        <input type="text" name="a_score" placeholder="主队" value="{$game_info.a_score}" lay-verify="score" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="L_own" class="layui-form-label">
+                    <span class="x-red">*</span>球队/直播员</label>
+                <div class="layui-input-inline">
+                    <select name="team_id" id="L_own">
+                        <option value="{$game_info.b_id}">{$game_info.b_name}</option>
+                        <option value="{$game_info.a_id}">{$game_info.a_name}</option>
+                        <option value="0">直播员</option>
+                    </select>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="L_content" class="layui-form-label">
+                    <span class="x-red">*</span>赛况内容</label>
+                <div class="layui-input-block">
+                    <textarea placeholder="请输入内容" id="L_content" name="content" lay-verify="outcontent" autocomplete="off" class="layui-textarea"></textarea>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="L_content" class="layui-form-label">赛况图</label>
+                <!--dom结构部分-->
+                <div class="layui-input-inline">
+                    <div class="layui-upload">
+                        <button type="button" class="layui-btn" id="upload_image">选择图片</button>
+                        <div class="layui-upload-list">
+                            <img class="layui-upload-img" id="game_preview_image">
+                            <input id="game_image" type="hidden" name="image" />
+                            <p id="demoText"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <label for="L_content" class="layui-form-label"></label>
+                <button class="layui-btn" lay-filter="edit" lay-submit="">提交</button>
+            </div>
+        </form>
+    </div>
+</div>
+{/block}
+<script>
+    layui.use(['form', 'layer','jquery'],
+    function() {
+        $ = layui.jquery;
+        var form = layui.form,
+            layer = layui.layer;
+
+        //自定义验证规则
+        form.verify({
+            outcontent: function(value) {
+                if (value.length <= 0) {
+                    return '请输入赛况内容';
+                }
+            },
+            countdown: function(value) {
+                if (value.length <= 0) {
+                    return '请选择剩余时间';
+                }
+            },
+            score: function(value) {
+                var r = /^\d+$/;
+                if (r.exec(value) == null || value == "") {
+                    return "请检查比分";
+                }
+            }
+        });
+
+        //监听提交
+        form.on('submit(edit)',
+            function(data) {
+                console.log(data);
+                //发异步，把数据提交给php
+                $.ajax({
+                    type: "POST",
+                    url: "/admin/live/push?id={$game_info.id}",
+                    data: data.field,
+                    dataType: "json",
+                    success: function(data){
+                        if (data.status) {
+                            layer.msg(data.message, {icon: 6,time :500},
+                            function () {
+                                //关闭当前frame
+                                xadmin.close();
+                                // 可以对父窗口进行刷新
+                                xadmin.father_reload();
+                            });
+                        } else {
+                            layer.msg(data.message);
+                        }
+                    }
+                });
+                return false;
+            });
+
+    });
+</script>
+<script>
+    layui.use('upload', function(){
+        var $ = layui.jquery
+            ,upload = layui.upload
+            ,layer = layui.layer;
+
+        //普通图片上传
+        var uploadInst = upload.render({
+            elem: '#upload_image'
+            ,url: '/admin/image/index'
+            ,accept: 'images' //只允许上传图片
+            ,acceptMime: 'image/*' //只筛选图片
+            ,before: function(obj){
+                layer.load();
+                //预读本地文件示例，不支持ie8
+                obj.preview(function(index, file, result){
+                    $('#game_preview_image').attr('src', result); //图片链接（base64）
+                });
+            }
+            ,done: function(res){
+                //如果上传成功
+                if(res.status == 1){
+                    layer.closeAll('loading');
+                    $('#game_image').attr('value',res.data.image);
+                    return false;
+                }
+                //上传失败
+                if(res.status == 0){
+                    return layer.msg(res.message);
+                }
+            }
+            ,error: function(){
+                layer.closeAll('loading'); //关闭加载层
+                //演示失败状态，并实现重传
+                var demoText = $('#demoText');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function(){
+                    uploadInst.upload();
+                });
+            }
+        });
+    });
+</script>
+<script>
+    layui.use('laydate', function(){
+        var laydate = layui.laydate;
+        //限定可选时间
+        laydate.render({
+            elem: '#test-limit3'
+            ,type: 'time'
+            ,min: '00:00:00'
+            ,max: '00:12:00'
+            ,btns: ['clear', 'confirm']
+        });
+    });
+</script>
